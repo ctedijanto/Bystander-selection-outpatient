@@ -1,11 +1,36 @@
-# 1a. SETUP - WORKSPACE ###################################################################
+# 1a. SETUP - Install and load required packages ############################
 
-# Load required packages
+if (!require(gdata)) install.packages('gdata')
+if (!require(ggplot2)) install.packages('ggplot2')
+if (!require(dplyr)) install.packages('dplyr')
+if (!require(foreign)) install.packages('foreign')
+if (!require(readstata13)) install.packages('readstata13')
+if (!require(survey)) install.packages('survey')
+if (!require(srvyr)) install.packages('srvyr')
+
 library(gdata)
 library(ggplot2)
 library(dplyr)
+library(foreign)
+library(readstata13)
+library(survey)
+library(srvyr)
 
-# 1b. SETUP - DEFINE VARIABLES OF INTEREST ################################################
+# 1b. SETUP - Load required data ############################################
+
+load("outpatient_bystander_analysis.Rdata")
+
+# Load NAMCS and NHAMCS 2010-2011 Stata files (available at links below)
+# NAMCS: http://www.nber.org/data/national-ambulatory-medical-care-survey.html
+# NHAMCS: http://www.nber.org/data/national-hospital-ambulatory-medical-care-survey.html
+namcs2010 <- read.dta13("namcs2010.dta")
+namcs2011 <- read.dta13("namcs2011.dta")
+nhamcsopd2010 <- read.dta13("nhamcsopd2010.dta")
+nhamcsopd2011 <- read.dta13("nhamcsopd2011.dta")
+nhamcsed2010 <- read.dta13("nhamcsed2010.dta")
+nhamcsed2011 <- read.dta13("nhamcsed2011.dta")
+
+# 1c. SETUP - Define variables of interest ##################################
 
 # Define species of interest
 species <- c("Streptococcus_pneumoniae", "Haemophilus_influenzae", "Moraxella_catarrhalis", 
@@ -26,31 +51,29 @@ antibiotics <- c("AMOXICILLIN", "AMOXICILLIN-CLAVULANATE", "PENICILLIN",
                  "AZITHROMYCIN", "CLINDAMYCIN", "CLARITHROMYCIN",
                  "CIPROFLOXACIN", "LEVOFLOXACIN", "MOXIFLOXACIN",
                  "CEFTRIAXONE", "CEPHALEXIN", "CEFDINIR",
-                 "SULFAMETHOXAZOLE-TRIMETHOPRIM", "NITROFURANTOIN", "DOXYCYCLINE", 
-                 "TETRACYCLINE", "MINOCYCLINE", "inclab", "anyab")
+                 "SULFAMETHOXAZOLE-TRIMETHOPRIM", "NITROFURANTOIN", 
+                 "DOXYCYCLINE", "TETRACYCLINE", "MINOCYCLINE",
+                 "inclab", "anyab")
 
-# Define drug classes
+# Define drug classes of interest
 # `drugclasses` vector matches respective class to antibiotics as defined in `antibiotics` vector
 drugclasses <- c("PENICILLINS", "PENICILLINS", "PENICILLINS",
                  "MACROLIDES", "MACROLIDES", "MACROLIDES",
                  "FLUOROQUINOLONES", "FLUOROQUINOLONES", "FLUOROQUINOLONES",
                  "CEPHALOSPORINS", "CEPHALOSPORINS", "CEPHALOSPORINS", 
-                 "SULFAMETHOXAZOLE-TRIMETHOPRIM", "NITROFURANTOIN", "TETRACYCLINES", 
-                 "TETRACYCLINES", "TETRACYCLINES", "inclab", "anyab")
+                 "SULFAMETHOXAZOLE-TRIMETHOPRIM", "NITROFURANTOIN", 
+                 "TETRACYCLINES", "TETRACYCLINES", "TETRACYCLINES", 
+                 "inclab", "anyab")
 drugclasses.key <- as.data.frame(cbind(antibiotic=antibiotics, drugclass=drugclasses))
 drugclasses.unique <- c("PENICILLINS", "MACROLIDES", "FLUOROQUINOLONES",
                         "CEPHALOSPORINS", "SULFAMETHOXAZOLE-TRIMETHOPRIM", "NITROFURANTOIN", 
                         "TETRACYCLINES", "inclab", "anyab")
 
-# Age groups of interest
+# Define age groups of interest
 groups <- c("kids0", "kids1to5", "adults")
 
-# 1c. SETUP - DATA FILES ##################################################################
 
-# Load in required files
-load("outpatient_bystander_analysis.Rdata")
-
-# 2a. PRE-ANALYSIS - MICROBIOME DATASETS #########################################################
+# 2a. DATA PREP - Microbiome #########################################################
 # Goal of processing steps:
 # 1. For data not from HMP (kids0 and kids1to5), need to consolidate from different studies to get overall prevalence for each bug
 # 2. Create one master microbiome file (with data from all 3 age groups)
@@ -110,21 +133,10 @@ microbiome[,2:ncol(microbiome)] <- apply(microbiome[,2:ncol(microbiome)], 2, fun
 microbiome$wtprev_kids1to5[which(microbiome$Species.strain.Key=="Pseudomonas_aeruginosa")] <- microbiome$wtprev_kids0[which(microbiome$Species.strain.Key=="Pseudomonas_aeruginosa")]
 microbiome$wtprev_kids1to5[which(microbiome$Species.strain.Key=="Streptococcus_agalactiae")] <- microbiome$wtprev_kids0[which(microbiome$Species.strain.Key=="Streptococcus_agalactiae")]
 
-# 2b. PRE-ANALYSIS - NAMCS/NHAMCS PREP #########################################################
-library(foreign)
-library(readstata13)
+# 2b. DATA PREP - NAMCS/NHAMCS #########################################################
+# i) Inclusion/exclusion -----------------------------------------------------------------------------
 
-# i)    Read in NAMCS/NHAMCS -----------------------------------------------------------------------------
-
-# Download NAMCS and NHAMCS 2010-2011 stata files: 
-# NAMCS: http://www.nber.org/data/national-ambulatory-medical-care-survey.html
-# NHAMCS: http://www.nber.org/data/national-hospital-ambulatory-medical-care-survey.html
-namcs2010 <- read.dta13("namcs2010.dta")
-namcs2011 <- read.dta13("namcs2011.dta")
-nhamcsopd2010 <- read.dta13("nhamcsopd2010.dta")
-nhamcsopd2011 <- read.dta13("nhamcsopd2011.dta")
-nhamcsed2010 <- read.dta13("nhamcsed2010.dta")
-nhamcsed2011 <- read.dta13("nhamcsed2011.dta")
+# Check: sum raw number of visits across all datasets
 totalVisits.noexcl <- sum(nrow(namcs2010), nrow(namcs2011), nrow(nhamcsopd2010), nrow(nhamcsopd2011), nrow(nhamcsed2010), nrow(nhamcsed2011))
 
 # Mark visits which did not result in hospital or observation visit (1 if no/included, 0 otherwise)
@@ -155,7 +167,7 @@ nhamcsopd2011.res <- nhamcsopd2011[varstokeep]
 nhamcsed2010.res <- nhamcsed2010[varstokeep]
 nhamcsed2011.res <- nhamcsed2011[varstokeep]
 
-# ii)   Pull in drug and diagnosis names ----------------------------------------------------------------------
+# ii) Pull in drug and diagnosis names ----------------------------------------------------------------------
 # Use MULTUM Lexicon classification system (in-house system does not have classes)
 
 # Pull in drug identifier codebooks
@@ -231,7 +243,7 @@ nhamcsopd2011.drugdecode <- decodeDrugDiag("nhamcsopd2011", nhamcsopd2011.res, D
 nhamcsed2010.drugdecode <- decodeDrugDiag("nhamcsed2010", nhamcsed2010.res, DRUGID.10, DRGLV2.10, DIAG.HED10)
 nhamcsed2011.drugdecode <- decodeDrugDiag("nhamcsed2011", nhamcsed2011.res, DRUGID.11, DRGLV2.HED11, DIAG.HED11)
 
-# iii)  Add antibiotic flags ('antibiotic<#>_flag') ----------------------------------------------------------------------------
+# iii) Add antibiotic flags ('antibiotic<#>_flag') ----------------------------------------------------------------------------
 # Create flag for each med (1-8) where 1=med is antibiotic, 0=otherwise (based on specification within anti-infectives, see link below)
 # Lexicon: https://wwwn.cdc.gov/nchs/nhanes/1999-2000/RXQ_DRUG.htm#Appendix_3:_Multum_Lexicon_Therapeutic_Classification_Scheme_
 # Additional NAMCS/NHAMCS resource: https://www.cdc.gov/nchs/ppt/nchs2010/13_schappert.pdf
@@ -271,7 +283,7 @@ nhamcsopd2011.drugdecode.ab <- antibioticsflag(nhamcsopd2011.drugdecode)
 nhamcsed2010.drugdecode.ab <- antibioticsflag(nhamcsed2010.drugdecode)
 nhamcsed2011.drugdecode.ab <- antibioticsflag(nhamcsed2011.drugdecode)
 
-# iv)   Create flag for inclusion criteria ('inclusion') ----------------------------------------------------------------------------
+# iv) Create flag for inclusion criteria ('inclusion') ----------------------------------------------------------------------------
 
 # Create overall inclusion flag (1 to include, 0 otherwise)
 # Removed criteria relating to oral, parenteral and topical antibiotics from Fleming-Dutra paper (code in v17)
@@ -289,7 +301,7 @@ totalVisits.incl <- sum(namcs2010.drugdecode.ab$inclusion, namcs2011.drugdecode.
                     nhamcsopd2010.drugdecode.ab$inclusion, nhamcsopd2011.drugdecode.ab$inclusion,
                     nhamcsed2010.drugdecode.ab$inclusion, nhamcsed2011.drugdecode.ab$inclusion)
 
-# v)    Add flags for antibiotics of interest ('<ANTIBIOTIC>_flag')----------------------------------------------------------------------------
+# v) Add flags for antibiotics of interest ('<ANTIBIOTIC>_flag')----------------------------------------------------------------------------
 # Create flag for each antibiotic where 1=antibiotic a was prescribed at that visits, 0=otherwise
 
 # length(antibiotics)-2 because do not create flags for "inclabnum" and "anyab" here
@@ -312,7 +324,7 @@ nhamcsopd2011.drugdecode.ab <- specificABflag(nhamcsopd2011.drugdecode.ab)
 nhamcsed2010.drugdecode.ab <- specificABflag(nhamcsed2010.drugdecode.ab)
 nhamcsed2011.drugdecode.ab <- specificABflag(nhamcsed2011.drugdecode.ab)
 
-# vi)   Add counts for drug classes of interest ('<CLASS>_count') ---------------------------------------------------------
+# vi) Add counts for drug classes of interest ('<CLASS>_count') ---------------------------------------------------------
 # Count of number of drugs of that drug class prescribed at each visit
 specificABclasscount <- function(df){
   rx1v2c1.name.1st <- which(names(df)=="rx1v2c1.name")
@@ -343,7 +355,7 @@ nhamcsopd2011.drugdecode.ab <- specificABclasscount(nhamcsopd2011.drugdecode.ab)
 nhamcsed2010.drugdecode.ab <- specificABclasscount(nhamcsed2010.drugdecode.ab)
 nhamcsed2011.drugdecode.ab <- specificABclasscount(nhamcsed2011.drugdecode.ab)
 
-# vii)  Add counts for overall antibiotics ('inclab_count' and 'anyab_count') ---------------------------------------------------------
+# vii) Add counts for overall antibiotics ('inclab_count' and 'anyab_count') ---------------------------------------------------------
 # 'inclab_count' = count of antibiotic in any of the explicitly included classes prescribed at that visit
 # 'anyab_count' = count of any antibiotic prescribed at that visit, as identified by MULTUM Lexicon system in NAMCS/NHAMCS
 # 2018.06.25 Change to now include any of the drug classes of interest (since shown in Figure 1)
@@ -419,7 +431,7 @@ nhamcsopd2011.drugdecode.ab.cond <- specificconditionflag(nhamcsopd2011.drugdeco
 nhamcsed2010.drugdecode.ab.cond <- specificconditionflag(nhamcsed2010.drugdecode.ab)
 nhamcsed2011.drugdecode.ab.cond <- specificconditionflag(nhamcsed2011.drugdecode.ab)
 
-# viii.b) Create TIERED diagosis (from Fleming-Dutra) - COMMENT OUT IF DOING BASELINE ANALYSIS ----------------------------------------------------------------------------
+# viiib) ALTERNATE vii - create TIERED diagosis (from Fleming-Dutra et al. 2016) ----------------------------------------------------------------------------
 # # 'creategreplstring' function creates the string of code needed to appropriately include/exclude codes
 # creategreplstring <- function(df, diagnum, inclcode, exclcode){
 #   m <- length(inclcode)
@@ -519,7 +531,7 @@ nhamcsed2011.drugdecode.ab.cond <- specificconditionflag(nhamcsed2011.drugdecode
 # nhamcsed2010.drugdecode.ab.cond <- finalconditionflag(nhamcsed2010.drugdecode.ab.cond)
 # nhamcsed2011.drugdecode.ab.cond <- finalconditionflag(nhamcsed2011.drugdecode.ab.cond)
 
-# ix)   Add flag and count for any condition of interest ('inclcond_flag', 'inclcond_count', 'other_flag') ----------------------------------------------------------------------------
+# ix) Add flag and count for any condition of interest ('inclcond_flag', 'inclcond_count', 'other_flag') ----------------------------------------------------------------------------
 # 'inclcond_flag'=1 if any of our conditions of interest was diagnosed during that visit, 0 otherwise
 # 'inclcond_count' is the count of conditions of interest diagnosed during that visit
 # 'other_flag'=1 if none of the conditions of interest was diagnosed during that visit (inverse of 'inclcond_flag')
@@ -541,7 +553,7 @@ nhamcsopd2011.drugdecode.ab.cond <- inclcondfunc(nhamcsopd2011.drugdecode.ab.con
 nhamcsed2010.drugdecode.ab.cond <- inclcondfunc(nhamcsed2010.drugdecode.ab.cond)
 nhamcsed2011.drugdecode.ab.cond <- inclcondfunc(nhamcsed2011.drugdecode.ab.cond)
 
-# x)    Add flags for age groups of interest ----------------------------------------------------------------------------
+# x) Add flags for age groups of interest ----------------------------------------------------------------------------
 
 agegroupsfunc <- function(df){
   df$agegroup[df$age==0] <- "kids0"
@@ -557,7 +569,7 @@ nhamcsopd2011.drugdecode.ab.cond.grp <- agegroupsfunc(nhamcsopd2011.drugdecode.a
 nhamcsed2010.drugdecode.ab.cond.grp <- agegroupsfunc(nhamcsed2010.drugdecode.ab.cond)
 nhamcsed2011.drugdecode.ab.cond.grp <- agegroupsfunc(nhamcsed2011.drugdecode.ab.cond)
 
-# 2c. PRE-ANALYSIS - BOOTSTRAP SETUP --------------------------------------------------------------------------------
+# 2c. DATA PREP - Setup bootstrap and create '.summary' dataframes --------------------------------------------------------------------------------
 # Calculate means and CI for proportions of diagnoses with given medication using 'survey' package
 # R documentation: https://cran.r-project.org/web/packages/survey/survey.pdf
 # For multistage sampling:
@@ -565,8 +577,6 @@ nhamcsed2011.drugdecode.ab.cond.grp <- agegroupsfunc(nhamcsed2011.drugdecode.ab.
 # strata = if subsequent stages are stratified, should be a formula with stratum identifiers at each stage
 # fpc = population size for each level of sampling; if not specified, then only does one-level with replacement
 # nest = TRUE --> PSUs reuse the same identifiers across strata
-library(survey)
-library(srvyr)
 
 # According to this documentation: https://www.cdc.gov/nchs/ppt/nchs2015/Hing_Monday_GlenEcho_C2.pdf
 # NHAMCS researchers should use combined ED and OPD files when computing variances for emergency and/or outpatient department estimates. 
@@ -650,7 +660,7 @@ namcs2011.summary.byclass <- surveyCalcs("namcs2011", "yes")
 nhamcs2010.summary.byclass <- surveyCalcs("nhamcs2010", "yes")
 nhamcs2011.summary.byclass <- surveyCalcs("nhamcs2011", "yes")
 
-# i)    Count visits by antibiotic and total visits ----------------------------------------------------------
+# i) Count visits by antibiotic and total visits ----------------------------------------------------------
 # Identify column index numbers in summary datasets
 condition.col <- which(names(namcs2010.summary)=="condition")
 antibiotic.col <- which(names(namcs2010.summary)=="antibiotic")
@@ -676,7 +686,7 @@ nhamcs2010.summary$totalVisits <- apply(nhamcs2010.summary, 1, function(x) nrow(
 nhamcs2011.summary$totalVisits <- apply(nhamcs2011.summary, 1, function(x) nrow(subset(nhamcs2011.drugdecode.ab.cond.grp, 
                                                                                        agegroup==x[agegroup.col] & get(paste0(x[condition.col], "_flag"))==1)))
 
-# ii)   Merge NAMCS/NHAMCS dataframes ----------------------------------------------------
+# ii) Merge NAMCS/NHAMCS dataframes ----------------------------------------------------
 # Merge full NAMCS/NHAMCS datasets
 fullNAMCS <- rbind(namcs2010.drugdecode.ab.cond.grp,
                    namcs2011.drugdecode.ab.cond.grp[names(namcs2010.drugdecode.ab.cond.grp)],
@@ -699,6 +709,7 @@ NAMCS.summary.byclass <- rbind(namcs2010.summary.byclass,
                                nhamcs2010.summary.byclass[names(namcs2010.summary.byclass)], 
                                nhamcs2011.summary.byclass[names(namcs2010.summary.byclass)])
 NAMCS.summary.byclass[is.na(NAMCS.summary.byclass)] <- 0
+
 
 # 3. BYSTANDER ANALYSIS ###################################################################
 # Weighted visits are used for all bystander analyses
@@ -761,7 +772,6 @@ rownames(bystander.cbar.df) <- NULL
 colnames(bystander.cbar.df) <- c("Species", "Antibiotic", "Bystander_prop", "N.sum", "T.sum")
 bystander.cbar.df[,3:ncol(bystander.cbar.df)] <- sapply(bystander.cbar.df[,3:ncol(bystander.cbar.df)], as.character)
 bystander.cbar.df[,3:ncol(bystander.cbar.df)] <- sapply(bystander.cbar.df[,3:ncol(bystander.cbar.df)], as.numeric)
-#write.table(bystander.cbar.df, "/Users/ctedijanto/Documents/03 Research/02 Bystander selection/01 Data/2018.09.24 bystander.cbar.df.txt", sep="\t")
 
 # Bystander prop by AB class and species -------------------------------------------------------------
 etiologies[is.na(etiologies)] <- 0
@@ -807,17 +817,6 @@ rownames(bystanderbyclass.cbar.FD.df) <- NULL
 colnames(bystanderbyclass.cbar.FD.df) <- c("Species", "drugclass", "bystanderbyclass_prop", "N.sum", "T.sum")
 bystanderbyclass.cbar.FD.df[,3:ncol(bystanderbyclass.cbar.FD.df)] <- sapply(bystanderbyclass.cbar.FD.df[,3:ncol(bystanderbyclass.cbar.FD.df)], as.character)
 bystanderbyclass.cbar.FD.df[,3:ncol(bystanderbyclass.cbar.FD.df)] <- sapply(bystanderbyclass.cbar.FD.df[,3:ncol(bystanderbyclass.cbar.FD.df)], as.numeric)
-write.table(bystanderbyclass.cbar.FD.df, "/Users/ctedijanto/Documents/03 Research/02 Bystander selection/01 Data/2018.09.27 bystanderbyclass.cbar.FD.df.txt", sep="\t")
-
-# Produce wide table of bystander proportions ----------------------------------------------------------
-library(tidyr)
-temp <- bystander.cbar.df
-temp$Bystander_prop <- round(temp$Bystander_prop,3)
-View(spread(temp[,c(1:3)], Antibiotic, Bystander_prop))
-
-temp <- bystanderbyclass.cbar.df
-temp$bystanderbyclass_prop <- round(temp$bystanderbyclass_prop,3)
-View(spread(temp[,c(1:3)], drugclass, bystanderbyclass_prop))
 
 # Total exposures by AB, species and condition -------------------------------------------------------
 totalExp.byCond <- function(){
@@ -863,7 +862,8 @@ for (i in 1:nrow(totalExp.byCond.df)){
   totalExp.byCond.df$totalExp[i] <- sum(subset(totalExp.byCond.df, species==totalExp.byCond.df$species[i] & antibiotic==totalExp.byCond.df$antibiotic[i])$exposures)
 }
 totalExp.byCond.df$exp.prop <- totalExp.byCond.df$exposures/totalExp.byCond.df$totalExp
-#write.table(totalExp.byCond.df, "/Users/ctedijanto/Documents/03 Research/02 Bystander selection/01 Data/2018.07.05 totalExp.txt", sep="\t")
+
+
 
 # 4. BOOTSTRAP #############################################################
 # Resample NAMCS/NHAMCS ---------------------------------------------------
