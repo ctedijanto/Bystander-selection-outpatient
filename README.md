@@ -62,7 +62,7 @@ In the baseline analysis, using the code and data included above, the first 5 ro
 ##### 3. *Bystander output*
 In the baseline analysis, using the code and data included above, the first 3 columns of the first 5 rows of the `bystander.df` dataframe should be as follows:
 
-| species                   | drugclass                     | bystander_prop        | 
+| species                   | antibiotic                    | bystander_prop        | 
 | :-------------            | :----------                   | :-----------:          | 
 | Streptococcus_pneumoniae  | AMOXICILLIN                   | 0.8185041             | 
 | Streptococcus_pneumoniae  | AMOXICILLIN-CLAVULANATE       | 0.8576846             | 
