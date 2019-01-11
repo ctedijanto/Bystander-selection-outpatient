@@ -128,29 +128,278 @@ $(document).ready(function () {
 <h3>Bystander selection in the outpatient setting</h3>
 <p><em>Author</em>: Christine Tedijanto<br />
 <em>Email</em>: <a href="mailto:ctedijanto@g.harvard.edu">ctedijanto@g.harvard.edu</a><br />
-<em>Last update</em>: November 6, 2018<br />
-<em>Publication</em>: <a href="https://www.biorxiv.org/content/early/2018/09/28/288704">Estimating the proportion of bystander selection for antibiotic resistance among potentially pathogenic bacterial flora</a> (<em>in press at PNAS</em>)</p>
+<em>Last update</em>: January 10, 2019<br />
+<em>Publication</em>: <a href="https://www.pnas.org/lookup/doi/10.1073/pnas.1810840115">Estimating the proportion of bystander selection for antibiotic resistance among potentially pathogenic bacterial flora</a></p>
 <div id="description" class="section level4">
 <h4>Description:</h4>
+<p>Antibiotic use creates a selective pressure for resistance. In this paper, we estimate the extent of bystander selection, which we define as selective pressures experienced by an organism due to antibiotics that were intended to treat another pathogen. We estimate a metric termed the “proportion of bystander exposures” using existing data from the National Ambulatory Medical Care Survey (NAMCS) and the National Hospital Ambulatory Medical Care Survey (NHAMCS), the Human Microbiome Project (HMP), and published carriage and etiology studies. This repository containss the analysis code and data needed to estimate the proportion of bystander exposures for 9 commonly carried bacterial species and 17 commonly used antibiotics in the United States.</p>
 </div>
 <div id="data" class="section level4">
 <h4>Data:</h4>
 <ul>
-<li>The <code>.Rdata</code> file contains the relevant Human Microbiome Project, ICD-9 code, and etiology data that are required for this project. The included dataframes are detailed below:
+<li><p>The <code>.Rdata</code> file contains the relevant Human Microbiome Project, ICD-9 code, and etiology data that are required for this project. The included dataframes are detailed below:</p>
 <ol style="list-style-type: decimal">
-<li><code>ICD9v28</code>: ICD9 diagnosis codes with long and short description.</li>
+<li><code>ICD9v28</code>: ICD9 diagnosis codes (v28) with long and short description from <a href="http://www.nber.org/data/icd-9-cm-diagnosis-and-procedure-codes-and-titles.html">NBER</a>.</li>
 <li><code>conditionCodes</code>: ICD9 diagnosis codes to include or exclude in condition categories. Based on conditions in <a href="https://jamanetwork.com/journals/jama/fullarticle/2518263">Fleming-Dutra et al. 2016</a>. Codes are written using regular expressions (<a href="https://medium.com/factory-mind/regex-tutorial-a-simple-cheatsheet-by-examples-649dc1c3f285">regex</a>) for use in <code>grepl</code> function.</li>
 <li><code>etiologies</code>: Estimated etiologies by condition, species, and age group. See Supporting Information in paper for sources.</li>
-<li><code>microbiome.adults</code>: Carriage prevalence by species and visit number among adults participating in the Human Microbiome Project.</li>
+<li><code>microbiome.adults</code>: Carriage prevalence by species and visit number among adults participating in the Human Microbiome Project. Estimates for several species were based on additional carriage studies; see Supporting Information in paper for sources.</li>
 <li><code>microbiome.kids0</code>: Carriage prevalence by species, body site, and study among children under 1yo. See Supporting Information in paper for sources.</li>
 <li><code>microbiome.kids1to5</code>: Carriage prevalence by species, body site, and study measured in children 1-5yo. See Supporting Information in paper for sources.<br />
 <br></li>
 </ol></li>
-<li>Data from the National Ambulatory Medical Care Survey (NAMCS) and the National Hospital Ambulatory Medical Care Survey (NHAMCS) are made publicly available by the CDC <a href="https://www.cdc.gov/nchs/ahcd/datasets_documentation_related.htm">here</a>. This analysis uses the Stata files from the 2010 and 2011 surveys.</li>
+<li><p>Data from the National Ambulatory Medical Care Survey (NAMCS) and the National Hospital Ambulatory Medical Care Survey (NHAMCS) are made publicly available by the CDC <a href="https://www.cdc.gov/nchs/ahcd/datasets_documentation_related.htm">here</a>. This analysis uses the Stata files from the 2010 and 2011 surveys.</p></li>
 </ul>
 </div>
 <div id="instructions" class="section level4">
 <h4>Instructions:</h4>
+<p>Place <code>outpatient_bystander_analysis.R</code>, <code>outpatient_bystander_analysis.Rdata</code>, and NAMCS/NHAMCS Stata files in the same directory. For baseline analysis, code chunk B2(ix) <em>ALTERNATE viii creating tiered diagnosis (from Fleming-Dutra et al. 2016)</em> should be commented out. Run entire file. Dataframes <code>bystander.df</code> and <code>bystanderbyclass.df</code> contain bystander proportions for all species across individual antibiotics and antibiotic classes, respectively.</p>
+<p>In order the run the sensitivity analysis using the tiered diagnosis, comment out code chunk B2(viii) and comment in code chunk B2(ix). Rerun all code.</p>
+</div>
+<div id="checks" class="section level4">
+<h4>Checks:</h4>
+<p>The baseline analysis may take up to 30 minutes to run (majority of runtime due to code chunk B3).</p>
+<div id="microbiome-file" class="section level5">
+<h5>1. <em>Microbiome file</em></h5>
+<p>Using the code and data included above, the age group-specific weighted prevalences for the first 5 rows of the <code>microbiome</code> dataframe should be as follows:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Species.strain.Key</th>
+<th align="center">wtprev_adults</th>
+<th align="right">wtprev_kids0</th>
+<th align="right">wtprev_kids1to5</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Escherichia_coli</td>
+<td align="center">0.66349810</td>
+<td align="right">0.94870000</td>
+<td align="right">1.00000000</td>
+</tr>
+<tr class="even">
+<td align="left">Haemophilus_influenzae</td>
+<td align="center">0.68631179</td>
+<td align="right">1.00000000</td>
+<td align="right">0.95896469</td>
+</tr>
+<tr class="odd">
+<td align="left">Klebsiella_pneumoniae</td>
+<td align="center">0.07414449</td>
+<td align="right">0.39097000</td>
+<td align="right">0.15000000</td>
+</tr>
+<tr class="even">
+<td align="left">Moraxella_catarrhalis</td>
+<td align="center">0.02281369</td>
+<td align="right">0.45485113</td>
+<td align="right">0.50790000</td>
+</tr>
+<tr class="odd">
+<td align="left">Pseudomonas_aeruginosa</td>
+<td align="center">0.01901141</td>
+<td align="right">0.01359456</td>
+<td align="right">0.01359456</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="namcsnhamcs-summary-file" class="section level5">
+<h5>2. <em>NAMCS/NHAMCS summary file</em></h5>
+<p>In the baseline analysis, using the code and data included above, the first 5 rows of the <code>NAMCS.summary</code> dataframe should be as follows:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">antibiotic</th>
+<th align="center">dataset</th>
+<th align="right">condition</th>
+<th align="right">agegroup</th>
+<th align="right">wtVisits</th>
+<th align="right">wtVisits.se</th>
+<th align="right">drugclass</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">AMOXICILLIN</td>
+<td align="center">namcs2010</td>
+<td align="right">acuteSinusitis</td>
+<td align="right">adults</td>
+<td align="right">2356812</td>
+<td align="right">565377.953</td>
+<td align="right">PENICILLINS</td>
+</tr>
+<tr class="even">
+<td align="left">AMOXICILLIN</td>
+<td align="center">namcs2010</td>
+<td align="right">acuteSinusitis</td>
+<td align="right">kids0</td>
+<td align="right">70355</td>
+<td align="right">70355.000</td>
+<td align="right">PENICILLINS</td>
+</tr>
+<tr class="odd">
+<td align="left">AMOXICILLIN</td>
+<td align="center">namcs2010</td>
+<td align="right">acuteSinusitis</td>
+<td align="right">kids1to5</td>
+<td align="right">158253</td>
+<td align="right">67000.831</td>
+<td align="right">PENICILLINS</td>
+</tr>
+<tr class="even">
+<td align="left">AMOXICILLIN</td>
+<td align="center">namcs2010</td>
+<td align="right">chronicSinusitis</td>
+<td align="right">adults</td>
+<td align="right">1769606</td>
+<td align="right">337174.213</td>
+<td align="right">PENICILLINS</td>
+</tr>
+<tr class="odd">
+<td align="left">AMOXICILLIN</td>
+<td align="center">namcs2010</td>
+<td align="right">chronicSinusitis</td>
+<td align="right">kids0</td>
+<td align="right">166430</td>
+<td align="right">106789.037</td>
+<td align="right">PENICILLINS</td>
+</tr>
+</tbody>
+</table>
+<p>In the baseline analysis, using the code and data included above, the first 5 rows of the <code>NAMCS.summary.byclass</code> dataframe should be as follows:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="center">dataset</th>
+<th align="right">condition</th>
+<th align="right">agegroup</th>
+<th align="right">drugclass</th>
+<th align="right">wtVisits</th>
+<th align="right">wtVisits.se</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">namcs2010</td>
+<td align="right">acuteSinusitis</td>
+<td align="right">adults</td>
+<td align="right">PENICILLINS</td>
+<td align="right">3448543</td>
+<td align="right">681417.82</td>
+</tr>
+<tr class="even">
+<td align="center">namcs2010</td>
+<td align="right">acuteSinusitis</td>
+<td align="right">kids0</td>
+<td align="right">PENICILLINS</td>
+<td align="right">70355</td>
+<td align="right">70355.00</td>
+</tr>
+<tr class="odd">
+<td align="center">namcs2010</td>
+<td align="right">acuteSinusitis</td>
+<td align="right">kids1to5</td>
+<td align="right">PENICILLINS</td>
+<td align="right">158253</td>
+<td align="right">67000.83</td>
+</tr>
+<tr class="even">
+<td align="center">namcs2010</td>
+<td align="right">chronicSinusitis</td>
+<td align="right">adults</td>
+<td align="right">PENICILLINS</td>
+<td align="right">3650426</td>
+<td align="right">562887.03</td>
+</tr>
+<tr class="odd">
+<td align="center">namcs2010</td>
+<td align="right">chronicSinusitis</td>
+<td align="right">kids0</td>
+<td align="right">PENICILLINS</td>
+<td align="right">166430</td>
+<td align="right">106789.04</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="bystander-output" class="section level5">
+<h5>3. <em>Bystander output</em></h5>
+<p>In the baseline analysis, using the code and data included above, the first 3 columns of the first 5 rows of the <code>bystander.df</code> dataframe should be as follows:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">species</th>
+<th align="center">drugclass</th>
+<th align="right">bystander_prop</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Streptococcus_pneumoniae</td>
+<td align="center">AMOXICILLIN</td>
+<td align="right">0.8185041</td>
+</tr>
+<tr class="even">
+<td align="left">Streptococcus_pneumoniae</td>
+<td align="center">AMOXICILLIN-CLAVULANATE</td>
+<td align="right">0.8576846</td>
+</tr>
+<tr class="odd">
+<td align="left">Streptococcus_pneumoniae</td>
+<td align="center">PENICILLIN</td>
+<td align="right">0.9867820</td>
+</tr>
+<tr class="even">
+<td align="left">Streptococcus_pneumoniae</td>
+<td align="center">AZITHROMYCIN</td>
+<td align="right">0.9160512</td>
+</tr>
+<tr class="odd">
+<td align="left">Streptococcus_pneumoniae</td>
+<td align="center">CLINDAMYCIN</td>
+<td align="right">0.9825318</td>
+</tr>
+</tbody>
+</table>
+<p>In the baseline analysis, using the code and data included above, the first 3 columns of the first 5 rows of the <code>bystanderbyclass.df</code> dataframe should be as follows:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">species</th>
+<th align="center">drugclass</th>
+<th align="right">bystanderbyclass_prop</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Streptococcus_pneumoniae</td>
+<td align="center">PENICILLINS</td>
+<td align="right">0.8324354</td>
+</tr>
+<tr class="even">
+<td align="left">Streptococcus_pneumoniae</td>
+<td align="center">MACROLIDES</td>
+<td align="right">0.9362218</td>
+</tr>
+<tr class="odd">
+<td align="left">Streptococcus_pneumoniae</td>
+<td align="center">QUINOLONES</td>
+<td align="right">0.9448619</td>
+</tr>
+<tr class="even">
+<td align="left">Streptococcus_pneumoniae</td>
+<td align="center">CEPHALOSPORINS</td>
+<td align="right">0.9004598</td>
+</tr>
+<tr class="odd">
+<td align="left">Streptococcus_pneumoniae</td>
+<td align="center">SULFAMETHOXAZOLE-TRIMETHOPRIM</td>
+<td align="right">0.9677543</td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 </div>
 
