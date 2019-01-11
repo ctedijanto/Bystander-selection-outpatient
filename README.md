@@ -31,7 +31,7 @@ The baseline analysis may take up to 30 minutes to run (majority of runtime due 
 Using the code and data included above, the age group-specific weighted prevalences for the first 5 rows of the `microbiome` dataframe should be as follows:
 
 | Species.strain.Key    | wtprev_adults     | wtprev_kids0    | wtprev_kids1to5 |
-| :-------------        | :----------:      | -----------:    | -----------:    |
+| :-------------        | :----------:      | :-----------:   | :-----------:   |
 | Escherichia_coli      | 0.66349810        | 0.94870000      | 1.00000000      |
 | Haemophilus_influenzae| 0.68631179        | 1.00000000      | 0.95896469      |
 | Klebsiella_pneumoniae | 0.07414449        | 0.39097000      | 0.15000000      |
@@ -42,7 +42,7 @@ Using the code and data included above, the age group-specific weighted prevalen
 In the baseline analysis, using the code and data included above, the first 5 rows of the `NAMCS.summary` dataframe should be as follows:
 
 | antibiotic  | dataset     | condition        | agegroup | wtVisits  | wtVisits.se | drugclass   |
-| :---------- | :----------:| -----------:     | -------: | -------:  | -----------:| ----------: |
+| :---------- | :------     | :-------         | :------- | :------:  | :---------: | :---------- |
 | AMOXICILLIN | namcs2010   | acuteSinusitis   | adults   | 2356812   | 565377.953  | PENICILLINS |
 | AMOXICILLIN | namcs2010   | acuteSinusitis   | kids0    | 70355     | 70355.000   | PENICILLINS |
 | AMOXICILLIN | namcs2010   | acuteSinusitis   | kids1to5 | 158253    | 67000.831   | PENICILLINS |
@@ -52,7 +52,7 @@ In the baseline analysis, using the code and data included above, the first 5 ro
 In the baseline analysis, using the code and data included above, the first 5 rows of the `NAMCS.summary.byclass` dataframe should be as follows:
 
 | dataset     | condition        | agegroup | drugclass   | wtVisits  | wtVisits.se |
-| :----------:| -----------:     | -------: | -------:    | -------:  | -----------:| 
+| :---------- | :-----------     | :------- | :-------    | :------:  | :---------: | 
 | namcs2010   | acuteSinusitis   | adults   | PENICILLINS | 3448543   | 681417.82   |
 | namcs2010   | acuteSinusitis   | kids0    | PENICILLINS | 70355     | 70355.00    |
 | namcs2010   | acuteSinusitis   | kids1to5 | PENICILLINS | 158253    | 67000.83    |
@@ -63,7 +63,7 @@ In the baseline analysis, using the code and data included above, the first 5 ro
 In the baseline analysis, using the code and data included above, the first 3 columns of the first 5 rows of the `bystander.df` dataframe should be as follows:
 
 | species                   | drugclass                     | bystander_prop        | 
-| :-------------            | :----------:                  | -----------:          | 
+| :-------------            | :----------                   | :-----------:          | 
 | Streptococcus_pneumoniae  | AMOXICILLIN                   | 0.8185041             | 
 | Streptococcus_pneumoniae  | AMOXICILLIN-CLAVULANATE       | 0.8576846             | 
 | Streptococcus_pneumoniae  | PENICILLIN                    | 0.9867820             | 
